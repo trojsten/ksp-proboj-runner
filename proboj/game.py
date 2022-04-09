@@ -173,3 +173,7 @@ class Game:
             self.server.send("OK")
 
         return True
+
+    def run(self):
+        self.start()
+        self.mainloop()
