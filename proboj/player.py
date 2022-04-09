@@ -20,33 +20,32 @@ class Player(Process):
         super().start()
 
         self._queue = Queue()
-        self._watchdog = Thread(target=self._watchdog)
-        self._watchdog.daemon = True
+        self._watchdog = Thread(target=self._watchdog_loop)
         self._watchdog.start()
 
-    def _watchdog(self):
+    def _watchdog_loop(self):
         while self.poll():
             line = self._process.stdout.readline()
-            self._queue.put(line.decode())
+            self._queue.put(line)
 
     def read(self) -> str:
         if not self.poll():
             raise ProcessEndException()
 
         start = time.time()
-        data = ""
+        data = []
         while True:
             try:
                 to = self.timeout - (time.time() - start)
                 if to < 0:
                     raise TimeoutError()
 
-                line: str = self._queue.get(timeout=to)
+                line: str = self._queue.get(timeout=to).strip()
 
-                if line.strip() == ".":
+                if line == ".":
                     break
-                data += line
+                data.append(line)
             except Empty:
                 pass
 
-        return data
+        return "\n".join(data)

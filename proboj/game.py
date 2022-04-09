@@ -1,6 +1,8 @@
 import json
+import os.path
 import shlex
 from datetime import datetime
+from typing import IO
 
 from colorama import Back, Fore, Style
 
@@ -15,23 +17,18 @@ class GameConfig:
             data = json.load(f)
             self.server: str = data["server"]
             self.players: dict[str, str] = data["players"]
+            self.timeout = data["timeout"]
 
 
 class GameDescription:
-    def __init__(
-        self, gamefile: str, players: list[str], arguments: str, timeout: float
-    ):
-        self.gamefile = gamefile
+    def __init__(self, gamefolder: str, players: list[str], arguments: str):
+        self.gamefolder = gamefolder
         self.players = players
-        self.timeout = timeout
         self.arguments = arguments
 
     @classmethod
-    def from_json(cls, x: str) -> "GameDescription":
-        data = json.loads(x)
-        return GameDescription(
-            data["gamefile"], data["players"], data["args"], float(data["timeout"])
-        )
+    def from_dict(cls, data: dict) -> "GameDescription":
+        return GameDescription(data["gamefolder"], data["players"], data["args"])
 
 
 class Game:
@@ -59,12 +56,21 @@ class Game:
             if player not in self.config.players:
                 raise ValueError(f"player {player} not found in config file.")
             self.players[player] = Player(
-                player, shlex.split(self.config.players[player]), self.desc.timeout
+                player, shlex.split(self.config.players[player]), self.config.timeout
             )
+
+        self.observer_file: IO | None = None
+        self.score_file: IO | None = None
 
     def start(self):
         self.log(self.S_SERVER, "Starting server...")
         self.server.start()
+        self.log(self.S_SERVER, "Opening game files.")
+
+        os.makedirs(self.desc.gamefolder, exist_ok=True)
+        self.observer_file = open(os.path.join(self.desc.gamefolder, "observer"), "w")
+        self.score_file = open(os.path.join(self.desc.gamefolder, "score"), "w")
+
         self.log(self.S_SERVER, "Sending game config to server.")
         self.server.send("CONFIG")
         self.server.send(" ".join(self.players))
@@ -88,6 +94,18 @@ class Game:
         for player in self.players.keys():
             self.players[player].kill()
 
+        if self.observer_file:
+            try:
+                self.observer_file.close()
+            except IOError:
+                pass
+
+        if self.score_file:
+            try:
+                self.score_file.close()
+            except IOError:
+                pass
+
     def _read_cmd(self) -> bool:
         try:
             command, *data = self.server.read().splitlines()
@@ -107,7 +125,16 @@ class Game:
         if command == "TO OBSERVER":
             data = "\n".join(data)
             self.log(self.S_OBSERVER, f"Sent {len(data)} bytes.")
-            # TODO: Write to observer
+            self.observer_file.write(data + "\n")
+            self.server.send("OK")
+
+        if command == "SCORES":
+            self.log(self.S_OBSERVER, "Saved scores.")
+            scores = {}
+            for line in data:
+                player, score = line.split()
+                scores[player] = int(score)
+            json.dump(scores, self.score_file)
             self.server.send("OK")
 
         if command[:9] == "TO PLAYER":
@@ -133,14 +160,16 @@ class Game:
                 self.server.send(".")
             except ProcessEndException:
                 self.log(self.S_PLAYER, f"{which}: Died.")
-                self.server.send("DIED\n.")
+                self.server.send("DIED")
             except TimeoutError:
                 self.log(self.S_PLAYER, f"{which}: Timeouted.")
                 self.players[which].kill()
-                self.server.send("DIED\n.")
+                self.server.send("DIED")
 
         if command[:11] == "KILL PLAYER":
             which = command[12:].strip()
             self.log(self.S_PLAYER, f"{which}: Killing.")
             self.players[which].kill()
             self.server.send("OK")
+
+        return True
