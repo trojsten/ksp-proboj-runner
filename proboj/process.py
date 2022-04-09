@@ -1,4 +1,5 @@
 import subprocess
+import sys
 
 
 class ProcessEndException(Exception):
@@ -18,7 +19,7 @@ class Process:
             self.command,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
+            stderr=sys.stderr,
             encoding="utf-8",
         )
 
