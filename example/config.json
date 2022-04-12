@@ -1,0 +1,8 @@
+{
+  "server": "./proboj_server",
+  "players": {
+    "test": "/usr/bin/python ./main.py",
+    "test2": "/usr/bin/python ./main.py"
+  },
+  "timeout": 5
+}

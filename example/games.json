@@ -1,0 +1,52 @@
+[
+  {
+    "gamefolder": "game1",
+    "players": ["test", "test2"],
+    "args": "50 50"
+  },
+  {
+    "gamefolder": "game2",
+    "players": ["test", "test2"],
+    "args": "50 50"
+  },
+  {
+    "gamefolder": "game3",
+    "players": ["test", "test2"],
+    "args": "50 50"
+  },
+  {
+    "gamefolder": "game4",
+    "players": ["test", "test2"],
+    "args": "50 50"
+  },
+  {
+    "gamefolder": "game5",
+    "players": ["test", "test2"],
+    "args": "50 50"
+  },
+  {
+    "gamefolder": "game6",
+    "players": ["test", "test2"],
+    "args": "50 50"
+  },
+  {
+    "gamefolder": "game7",
+    "players": ["test", "test2"],
+    "args": "50 50"
+  },
+  {
+    "gamefolder": "game8",
+    "players": ["test", "test2"],
+    "args": "50 50"
+  },
+  {
+    "gamefolder": "game9",
+    "players": ["test", "test2"],
+    "args": "50 50"
+  },
+  {
+    "gamefolder": "game10",
+    "players": ["test", "test2"],
+    "args": "50 50"
+  }
+]
