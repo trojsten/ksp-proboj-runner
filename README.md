@@ -17,7 +17,7 @@ binárku *(v pythone je to fuj, ale je to pre účastníkov najjednoduchšie)*.
 Binárku si vyrobíš takto:
 
 ```
-pipenv run pyinstaller main.py
+pipenv run pyinstaller -F main.py
 pipenv run staticx dist/main dist/proboj_runner
 ```
 
