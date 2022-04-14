@@ -10,6 +10,8 @@ colorama = "*"
 black = "*"
 isort = "*"
 flake8 = "*"
+pyinstaller = "*"
+staticx = "*"
 
 [requires]
 python_version = "3.10"
