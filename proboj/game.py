@@ -1,3 +1,4 @@
+import gzip
 import json
 import os.path
 import shlex
@@ -68,7 +69,7 @@ class Game:
         self.log(self.S_SERVER, "Opening game files.")
 
         os.makedirs(self.desc.gamefolder, exist_ok=True)
-        self.observer_file = open(os.path.join(self.desc.gamefolder, "observer"), "w")
+        self.observer_file = gzip.open(os.path.join(self.desc.gamefolder, "observer.gz"), "w")
         self.score_file = open(os.path.join(self.desc.gamefolder, "score"), "w")
 
         self.log(self.S_SERVER, "Sending game config to server.")
@@ -125,7 +126,7 @@ class Game:
         if command == "TO OBSERVER":
             data = "\n".join(data)
             self.log(self.S_OBSERVER, f"Sent {len(data)} bytes.")
-            self.observer_file.write(data + "\n")
+            self.observer_file.write((data + "\n").encode())
             self.server.send("OK")
 
         if command == "SCORES":
