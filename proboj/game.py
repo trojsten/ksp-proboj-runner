@@ -50,14 +50,17 @@ class Game:
     def __init__(self, config: GameConfig, desc: GameDescription):
         self.config = config
         self.desc = desc
-        self.server = Server(shlex.split(self.config.server))
+        self.server = Server(shlex.split(self.config.server), self.desc.gamefolder)
         self.players: dict[str, Player] = {}
 
         for player in self.desc.players:
             if player not in self.config.players:
                 raise ValueError(f"player {player} not found in config file.")
             self.players[player] = Player(
-                player, shlex.split(self.config.players[player]), self.config.timeout
+                player,
+                shlex.split(self.config.players[player]),
+                self.config.timeout,
+                self.desc.gamefolder,
             )
 
         self.observer_file: IO | None = None
@@ -69,7 +72,9 @@ class Game:
         self.log(self.S_SERVER, "Opening game files.")
 
         os.makedirs(self.desc.gamefolder, exist_ok=True)
-        self.observer_file = gzip.open(os.path.join(self.desc.gamefolder, "observer.gz"), "w")
+        self.observer_file = gzip.open(
+            os.path.join(self.desc.gamefolder, "observer.gz"), "w"
+        )
         self.score_file = open(os.path.join(self.desc.gamefolder, "score"), "w")
 
         self.log(self.S_SERVER, "Sending game config to server.")
@@ -92,8 +97,10 @@ class Game:
 
     def teardown(self):
         self.server.kill()
+        self.server.teardown()
         for player in self.players.keys():
             self.players[player].kill()
+            self.players[player].teardown()
 
         if self.observer_file:
             try:
@@ -139,7 +146,14 @@ class Game:
             self.server.send("OK")
 
         if command[:9] == "TO PLAYER":
-            which = command[10:].strip()
+            args = command[10:].strip().split(maxsplit=1)
+            which = args[0]
+
+            if len(args) == 2:
+                self.players[which].write_log(f"---- {args[1]} ----\n")
+            else:
+                self.players[which].write_log("-" * 20 + "\n")
+
             data = "\n".join(data)
             try:
                 self.players[which].send(data)

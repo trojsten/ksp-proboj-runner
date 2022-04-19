@@ -1,3 +1,4 @@
+import os.path
 import time
 from queue import Empty, Queue
 from threading import Thread
@@ -6,10 +7,11 @@ from proboj.process import Process, ProcessEndException
 
 
 class Player(Process):
-    def __init__(self, name: str, command: list[str], timeout: float):
+    def __init__(self, name: str, command: list[str], timeout: float, gamedir: str):
         super().__init__(command)
         self.name = name
         self.timeout = timeout
+        self.logfile = os.path.join(gamedir, "logs", f"{name}.gz")
         self._queue: Queue | None = None
         self._watchdog: Thread | None = None
 

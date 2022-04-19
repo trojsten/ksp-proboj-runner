@@ -1,5 +1,7 @@
+import gzip
+import os
 import subprocess
-import sys
+from typing import IO
 
 
 class ProcessEndException(Exception):
@@ -10,16 +12,23 @@ class Process:
     def __init__(self, command: list[str]):
         self.command = command
         self._process: subprocess.Popen | None = None
+        self.logfile: str | None = None
+        self._log: IO | None = None
 
     def start(self):
         if self.poll():
             return
 
+        stderr = subprocess.DEVNULL
+        if self.logfile:
+            self.open_log()
+            stderr = self._log
+
         self._process = subprocess.Popen(
             self.command,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=sys.stderr,
+            stderr=stderr,
             encoding="utf-8",
         )
 
@@ -57,3 +66,25 @@ class Process:
     def kill(self):
         if self.poll():
             self._process.kill()
+
+    def teardown(self):
+        self.close_log()
+
+    def open_log(self):
+        if not self.logfile:
+            return
+
+        if self._log:
+            return
+
+        os.makedirs(os.path.dirname(self.logfile), exist_ok=True)
+
+        self._log = gzip.open(self.logfile, "w")
+
+    def write_log(self, data: str):
+        if self._log:
+            self._log.write(data.encode())
+
+    def close_log(self):
+        if self._log:
+            self._log.close()
