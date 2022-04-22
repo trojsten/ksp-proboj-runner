@@ -1,5 +1,6 @@
 {
   "server": "./proboj_server",
+  "server_workdir": "../proboj-tron/",
   "players": {
     "test": "/usr/bin/python ./main.py",
     "test2": "/usr/bin/python ./main.py"

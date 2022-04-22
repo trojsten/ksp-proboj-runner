@@ -22,7 +22,7 @@ class GameConfig:
             if "server_workdir" in data and data["server_workdir"]:
                 self.server_workdir = data["server_workdir"]
             else:
-                self.server_workdir = ""
+                self.server_workdir = "."
 
 
 class GameDescription:
