@@ -1,6 +1,7 @@
 import gzip
 import os
 import subprocess
+from threading import Thread
 from typing import IO
 
 
@@ -15,22 +16,31 @@ class Process:
         self.logfile: str | None = None
         self._log: IO | None = None
 
+    def get_popen_kwargs(self):
+        stderr = subprocess.DEVNULL
+        if self.logfile:
+            self.open_log()
+            stderr = subprocess.PIPE
+
+        return {
+            "stdin": subprocess.PIPE,
+            "stdout": subprocess.PIPE,
+            "stderr": stderr,
+            "encoding": "utf-8",
+        }
+
     def start(self):
         if self.poll():
             return
 
-        stderr = subprocess.DEVNULL
-        if self.logfile:
-            self.open_log()
-            stderr = self._log
-
         self._process = subprocess.Popen(
             self.command,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=stderr,
-            encoding="utf-8",
+            **self.get_popen_kwargs(),
         )
+
+        if self._log:
+            self._watchdog = Thread(target=self._stderr_thread)
+            self._watchdog.start()
 
     def poll(self) -> bool:
         if self._process is None:
@@ -66,9 +76,15 @@ class Process:
     def kill(self):
         if self.poll():
             self._process.kill()
+            self._process.wait()
 
     def teardown(self):
         self.close_log()
+
+    def _stderr_thread(self):
+        while self.poll():
+            line = self._process.stderr.readline()
+            self._log.write(line)
 
     def open_log(self):
         if not self.logfile:
@@ -78,13 +94,15 @@ class Process:
             return
 
         os.makedirs(os.path.dirname(self.logfile), exist_ok=True)
-
-        self._log = gzip.open(self.logfile, "w")
+        self._log = gzip.open(self.logfile, "wt", encoding="utf-8")
 
     def write_log(self, data: str):
         if self._log:
-            self._log.write(data.encode())
+            self._log.write(data)
 
     def close_log(self):
         if self._log:
-            self._log.close()
+            try:
+                self._log.close()
+            except IOError:
+                pass

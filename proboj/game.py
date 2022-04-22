@@ -19,6 +19,10 @@ class GameConfig:
             self.server: str = data["server"]
             self.players: dict[str, str] = data["players"]
             self.timeout = data["timeout"]
+            if "server_workdir" in data and data["server_workdir"]:
+                self.server_workdir = data["server_workdir"]
+            else:
+                self.server_workdir = ""
 
 
 class GameDescription:
@@ -50,7 +54,7 @@ class Game:
     def __init__(self, config: GameConfig, desc: GameDescription):
         self.config = config
         self.desc = desc
-        self.server = Server(shlex.split(self.config.server), self.desc.gamefolder)
+        self.server = Server(shlex.split(self.config.server), self.desc.gamefolder, self.config.server_workdir)
         self.players: dict[str, Player] = {}
 
         for player in self.desc.players:
