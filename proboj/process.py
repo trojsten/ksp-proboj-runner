@@ -84,6 +84,8 @@ class Process:
     def _stderr_thread(self):
         while self.poll():
             line = self._process.stderr.readline()
+            if self._log.closed:
+                return
             self._log.write(line)
 
     def open_log(self):
