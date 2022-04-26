@@ -182,12 +182,14 @@ class Game:
                 self.server.send("DIED")
             except TimeoutError:
                 self.log(self.S_PLAYER, f"{which}: Timeouted.")
+                self.players[which].write_log("PROBOJ: PLAYER TIMEOUTED")
                 self.players[which].kill()
                 self.server.send("DIED")
 
         if command[:11] == "KILL PLAYER":
             which = command[12:].strip()
             self.log(self.S_PLAYER, f"{which}: Killing.")
+            self.players[which].write_log("PROBOJ: KILLED BY SERVER")
             self.players[which].kill()
             self.server.send("OK")
 
