@@ -45,7 +45,7 @@ class Game:
         print(
             Fore.WHITE
             + Style.DIM
-            + datetime.now().strftime("%Y-%m-%d %H:%M:%S ")
+            + datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f ")
             + Style.RESET_ALL,
             end="",
         )
@@ -164,8 +164,8 @@ class Game:
                 self.players[which].send(".")
                 self.log(self.S_PLAYER, f"{which}: Sent {len(data)} bytes.")
                 self.server.send("OK")
-            except ProcessEndException:
-                self.log(self.S_PLAYER, f"{which}: Died.")
+            except ProcessEndException as e:
+                self.log(self.S_PLAYER, f"{which}: Died: exit {e.exitcode}.")
                 self.server.send("DIED")
 
         if command[:11] == "READ PLAYER":
@@ -177,8 +177,8 @@ class Game:
                 self.server.send("OK")
                 self.server.send(player_data)
                 self.server.send(".")
-            except ProcessEndException:
-                self.log(self.S_PLAYER, f"{which}: Died.")
+            except ProcessEndException as e:
+                self.log(self.S_PLAYER, f"{which}: Died: exit {e.exitcode}.")
                 self.server.send("DIED")
             except TimeoutError:
                 self.log(self.S_PLAYER, f"{which}: Timeouted.")

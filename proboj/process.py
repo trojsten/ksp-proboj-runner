@@ -6,7 +6,8 @@ from typing import IO
 
 
 class ProcessEndException(Exception):
-    pass
+    def __init__(self, exit):
+        self.exitcode = exit
 
 
 class Process:
@@ -55,14 +56,14 @@ class Process:
 
     def send(self, data: str):
         if not self.poll():
-            raise ProcessEndException()
+            raise ProcessEndException(self._process.returncode)
 
         self._process.stdin.write(data + "\n")
         self._process.stdin.flush()
 
     def read(self) -> str:
         if not self.poll():
-            raise ProcessEndException()
+            raise ProcessEndException(self._process.returncode)
 
         data = ""
         while self.poll():
