@@ -16,6 +16,7 @@ class Process:
         self._process: subprocess.Popen | None = None
         self.logfile: str | None = None
         self._log: IO | None = None
+        self.exitcode: int | None = None
 
     def get_popen_kwargs(self):
         stderr = subprocess.DEVNULL
@@ -49,6 +50,7 @@ class Process:
 
         self._process.poll()
         if self._process.returncode is not None:
+            self.exitcode = self._process.returncode
             self._process = None
             return False
 
@@ -56,14 +58,14 @@ class Process:
 
     def send(self, data: str):
         if not self.poll():
-            raise ProcessEndException(self._process.returncode)
+            raise ProcessEndException(self.exitcode)
 
         self._process.stdin.write(data + "\n")
         self._process.stdin.flush()
 
     def read(self) -> str:
         if not self.poll():
-            raise ProcessEndException(self._process.returncode)
+            raise ProcessEndException(self.exitcode)
 
         data = ""
         while self.poll():
