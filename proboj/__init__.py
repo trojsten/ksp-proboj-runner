@@ -13,7 +13,7 @@ def main():
     parser.add_argument("config", type=pathlib.Path)
     parser.add_argument("games", type=pathlib.Path)
     parser.add_argument("--single", action="store_true")
-    parser.add_argument("-v", "--version", action="version", version="ver. 4")
+    parser.add_argument("-v", "--version", action="version", version="ver. 5")
     parser.add_argument("--concurrency", type=int, default=0)
     args = parser.parse_args()
 

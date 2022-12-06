@@ -32,7 +32,7 @@ class Player(Process):
 
     def read(self) -> str:
         if not self.poll():
-            raise ProcessEndException(self._process.returncode)
+            raise ProcessEndException(self.exitcode)
 
         start = time.time()
         data = []
