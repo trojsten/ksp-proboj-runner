@@ -7,11 +7,11 @@ from proboj.process import Process, ProcessEndException
 
 
 class Player(Process):
-    def __init__(self, name: str, command: list[str], timeout: float, gamedir: str):
+    def __init__(self, name: str, command: list[str], timeout: float, gamedir: str, disable_logs: bool = False):
         super().__init__(command)
         self.name = name
         self.timeout = timeout
-        self.logfile = os.path.join(gamedir, "logs", f"{name}.gz")
+        self.logfile = os.path.join(gamedir, "logs", f"{name}.gz") if not disable_logs else None
         self._queue: Queue | None = None
         self._watchdog: Thread | None = None
 

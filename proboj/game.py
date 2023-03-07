@@ -19,6 +19,7 @@ class GameConfig:
             self.server: str = data["server"]
             self.players: dict[str, str] = data["players"]
             self.timeout = data["timeout"]
+            self.disable_logs: bool = data.get("disable_logs", False)
             if "server_workdir" in data and data["server_workdir"]:
                 self.server_workdir = data["server_workdir"]
             else:
@@ -41,7 +42,10 @@ class Game:
     S_OBSERVER = Back.GREEN + Fore.BLACK + " OBSERVER " + Style.RESET_ALL
     S_PLAYER = Back.BLUE + Fore.BLACK + " PLAYER   " + Style.RESET_ALL
 
-    def log(self, *message):
+    def log(self, sender, *message):
+        if self.config.disable_logs and sender != self.S_SERVER:
+            return
+
         print(
             Fore.WHITE
             + Style.DIM
@@ -49,12 +53,12 @@ class Game:
             + Style.RESET_ALL,
             end="",
         )
-        print(*message)
+        print(sender, *message)
 
     def __init__(self, config: GameConfig, desc: GameDescription):
         self.config = config
         self.desc = desc
-        self.server = Server(shlex.split(self.config.server), self.desc.gamefolder, self.config.server_workdir)
+        self.server = Server(shlex.split(self.config.server), self.desc.gamefolder, self.config.server_workdir, self.config.disable_logs)
         self.players: dict[str, Player] = {}
 
         for player in self.desc.players:
@@ -65,6 +69,7 @@ class Game:
                 shlex.split(self.config.players[player]),
                 self.config.timeout,
                 self.desc.gamefolder,
+                self.config.disable_logs,
             )
 
         self.observer_file: IO | None = None
@@ -93,8 +98,12 @@ class Game:
 
     def mainloop(self):
         while self.server.poll():
-            cont = self._read_cmd()
-            if not cont:
+            try:
+                cont = self._read_cmd()
+                if not cont:
+                    break
+            except ProcessEndException as e:
+                self.log(self.S_SERVER, f"Exit {e.exitcode}")
                 break
 
         self.teardown()

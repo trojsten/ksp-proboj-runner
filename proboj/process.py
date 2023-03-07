@@ -1,7 +1,7 @@
 import gzip
 import os
 import subprocess
-from threading import Thread
+from threading import Thread, Lock
 from typing import IO
 
 
@@ -13,7 +13,8 @@ class ProcessEndException(Exception):
 class Process:
     def __init__(self, command: list[str]):
         self.command = command
-        self._process: subprocess.Popen | None = None
+        self._died = True
+        self._process: subprocess.Popen
         self.logfile: str | None = None
         self._log: IO | None = None
         self.exitcode: int | None = None
@@ -35,23 +36,28 @@ class Process:
         if self.poll():
             return
 
-        self._process = subprocess.Popen(
-            self.command,
-            **self.get_popen_kwargs(),
-        )
+        try:
+            self._process = subprocess.Popen(
+                self.command,
+                **self.get_popen_kwargs(),
+            )
+            self._died = False
+        except OSError as e:
+            print(f"Error while starting '{self.command}': {e}")
+            return
 
         if self._log:
             self._watchdog = Thread(target=self._stderr_thread)
             self._watchdog.start()
 
     def poll(self) -> bool:
-        if self._process is None:
+        if self._died:
             return False
 
         self._process.poll()
         if self._process.returncode is not None:
             self.exitcode = self._process.returncode
-            self._process = None
+            self._died = True
             return False
 
         return True
@@ -60,8 +66,11 @@ class Process:
         if not self.poll():
             raise ProcessEndException(self.exitcode)
 
-        self._process.stdin.write(data + "\n")
-        self._process.stdin.flush()
+        try:
+            self._process.stdin.write(data + "\n")
+            self._process.stdin.flush()
+        except BrokenPipeError:
+            self.poll()
 
     def read(self) -> str:
         if not self.poll():
